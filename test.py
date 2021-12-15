@@ -1,36 +1,61 @@
-import tkinter as tk
+# Import required Libraries
+from tkinter import *
 from PIL import Image, ImageTk
+import cv2
 
-class Layout:
-    def __init__(self, master):
-        self.master = master
-        self.rootgeometry()
-        self.canvas = tk.Canvas(self.master)
-        self.canvas.pack()
-        self.background_image = Image.open('image_file.PNG')
-        self.image_copy = self.background_image.copy()
-        self.background = ImageTk.PhotoImage(self.background_image)
-        self.loadbackground()
+# Create an instance of TKinter Window or frame
+win = Tk()
 
+# Set the size of the window
+win.geometry("700x350")
+win.grid_columnconfigure(0, weight=1)
+win.grid_columnconfigure(1, weight=1)
+win.grid_rowconfigure(0, weight=4)
+win.grid_rowconfigure(1, weight=1)
 
-def loadbackground(self):
-    self.label = tk.Label(self.canvas, image=self.background)
-    self.label.pack(fill='both', expand='yes')
+# Create a frame
+frame = LabelFrame(win, text="Frame!")
+frame.grid(row=0, column=0, columnspan=1, sticky=N + S + E + W, padx=0, pady=0)
+frame.pack_propagate(False)
 
+# Create a Label to capture the Video frames
+label = Label(frame)
+label.grid(row=0, column=0)
+cap = cv2.VideoCapture(0)
 
-def rootgeometry(self):
-    x = int(self.master.winfo_screenwidth() * 0.7)
-    y = int(self.master.winfo_screenheight() * 0.7)
-    z = str(x) + 'x' + str(y)
-    self.master.geometry(z)
-
-
-def resizeimage(self, event):
-    image = self.image_copy.resize((self.master.winfo_width(), self.master.winfo_height()))
-    self.image1 = ImageTk.PhotoImage(image)
-    self.label.config(image=self.image1)
+frame.update()
 
 
-root = tk.Tk()
-a = Layout(root)
-root.mainloop()
+# Define function to show frame
+def show_frames():
+    # Get the latest frame and convert into Image
+    cv2image = cv2.cvtColor(cap.read()[1], cv2.COLOR_BGR2RGB)
+    img = Image.fromarray(cv2image)
+    # Convert image to PhotoImage
+
+    frame_width = frame.winfo_width()
+    frame_height = frame.winfo_height()
+    frame_aspect_ratio = frame_width / frame_height
+
+    image_width = img.size[0]
+    image_height = img.size[1]
+    image_aspect_ratio = image_width / image_height
+
+    resized_image = img
+    if image_width > frame_width or image_height > frame_height:
+        if image_aspect_ratio > frame_aspect_ratio:
+            resized_image = img.resize((frame_width, int(frame_width / image_aspect_ratio)))
+        else:
+            resized_image = img.resize((int(frame_height * image_aspect_ratio), frame_height))
+
+    print(resized_image.size[0])
+    imgtk = ImageTk.PhotoImage(image=resized_image)
+    label.imgtk = imgtk
+    label.configure(image=imgtk)
+
+    # Repeat after an interval to capture continiously
+    label.after(20, show_frames)
+
+show_frames()
+
+win.mainloop()
